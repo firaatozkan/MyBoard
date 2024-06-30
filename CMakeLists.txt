@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.5.0)
-project(MyBoard VERSION 0.1.0 LANGUAGES C CXX)
+project(ToyKanban VERSION 0.1.0 LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED 23)
@@ -11,7 +11,7 @@ set(CMAKE_AUTORCC ON)
 set(CMAKE_AUTOUIC ON)
 
 add_executable(
-    MyBoard
+    ToyKanban
     ./src/Main.cpp
     ./src/KanbanBoard.cpp
     ./src/TaskRepository.cpp
@@ -25,13 +25,13 @@ add_executable(
 )
 
 target_include_directories(
-    MyBoard
+    ToyKanban
     PRIVATE
     ./include
 )
 
 target_link_libraries(
-    MyBoard
+    ToyKanban
     PUBLIC
     Qt5::Core
     Qt5::Widgets
