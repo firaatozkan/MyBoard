@@ -13,12 +13,15 @@ set(CMAKE_AUTOUIC ON)
 add_executable(
     MyBoard
     ./src/Main.cpp
-    ./src/TaskDialog.cpp
     ./src/KanbanBoard.cpp
     ./src/TaskRepository.cpp
-
-    ./include/TaskDialog.hpp
+    ./src/TaskMovingDialog.cpp
+    ./src/TaskAdditionDialog.cpp
+    
     ./include/KanbanBoard.hpp
+    ./include/TaskRepository.hpp
+    ./include/TaskMovingDialog.hpp
+    ./include/TaskAdditionDialog.hpp
 )
 
 target_include_directories(
@@ -35,4 +38,5 @@ target_link_libraries(
     Qt5::Sql
 )
 
+# Desired db path
 add_compile_definitions(DB_PATH_ENV="${PROJECT_SOURCE_DIR}/Tasks.db")

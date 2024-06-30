@@ -8,102 +8,135 @@
 #include <QListWidget>
 #include <QPushButton>
 #include <string_view>
-#include "TaskDialog.hpp"
+#include "Utility.hpp"
 #include "KanbanBoard.hpp"
-#include "TaskRepository.hpp"
+#include "TaskMovingDialog.hpp"
+#include "TaskAdditionDialog.hpp"
 
-KanbanBoard::KanbanBoard(QWidget *parent)
+
+KanbanBoard::KanbanBoard(QWidget* parent)
     : QMainWindow(parent),
-      m_CentralWidget(new QWidget(this))
+      m_TaskRepository(this)
 {
-    this->setCentralWidget(m_CentralWidget);
+    this->initWindow();
+}
+
+
+auto KanbanBoard::initWindow() -> void
+{
+    this->m_CentralWidget.reset(new QWidget);
+
+    this->setCentralWidget(m_CentralWidget.get());
 
     auto mainLayout = new QHBoxLayout;
 
-    this->addStatuses(mainLayout);
+    this->addStatuses(*mainLayout);
 
-    this->addButtons(mainLayout);
+    this->addButtons(*mainLayout);
 
     this->fillTaskLists();
 
     m_CentralWidget->setLayout(mainLayout);
 }
 
-void KanbanBoard::addStatuses(QHBoxLayout *const layout)
+
+auto KanbanBoard::addStatuses(QHBoxLayout& mainLayout) -> void
 {
-    auto statuses = TaskRepository::get()
-                        .getAllStatuses();
+    std::ranges::transform(statuses,
+                           Utility::QLayoutInserter(&mainLayout),
+                           [this] (const auto status)
+                           {
+                               const auto layout    = new QVBoxLayout;
+                               const auto label     = new QLabel(status.data(), this);
+                               const auto list      = new QListWidget(this);
 
-    for (auto&& status : statuses |
-                             std::views::as_rvalue)
-    {
-        auto temp   = new QVBoxLayout;
-        auto label  = new QLabel(status, this);
-        auto list   = new QListWidget(this);
+                               layout->addWidget(label, 0, Qt::AlignCenter);
+                               layout->addWidget(list);
 
-        temp->addWidget(label, 0, Qt::AlignCenter);
-        temp->addWidget(list);
+                               QObject::connect(list,
+                                                &QListWidget::itemClicked,
+                                                [this] (const auto task)
+                                                {
+                                                    m_CurrentActivatedTask = task ? OptionalListWidgetItemRef(*task)
+                                                                                  : std::nullopt;
+                                                });
 
-        connect(list,
-                &QListWidget::itemClicked,
-                this,
-                &KanbanBoard::taskClicked);
+                               m_StatusWidgetMap.insert_or_assign(status.data(),
+                                                                  *list);
 
-        m_StatusWidgetMap.emplace(std::move(status),
-                                  list);
-
-        layout->addLayout(temp);
-    }
+                               return layout;
+                           });
 }
 
-void KanbanBoard::addButtons(QHBoxLayout *const layout)
+
+auto KanbanBoard::addButtons(QHBoxLayout& mainLayout) -> void
 {
-    auto buttonLayout   = new QVBoxLayout;
-    auto addButton      = new QPushButton("Add Task", this);
-    auto removeButton   = new QPushButton("Remove Task", this);
+    const auto buttonLayout = new QVBoxLayout;
+    const auto addButton    = new QPushButton("Add Task", this);
+    const auto moveButton   = new QPushButton("Move Task", this);
+    const auto removeButton = new QPushButton("Remove Task", this);
 
-    connect(addButton,
-            &QPushButton::clicked,
-            this,
-            &KanbanBoard::addButtonClicked);
+    QObject::connect(addButton,
+                     &QPushButton::clicked,
+                     [this]
+                     {
+                         TaskAdditionDialog task(this);
+                         task.setFixedSize(600, 400);
+                         task.exec();
+                     });
 
-    connect(removeButton,
-            &QPushButton::clicked,
-            this,
-            &KanbanBoard::removeButtonClicked);
+    QObject::connect(moveButton,
+                     &QPushButton::clicked,
+                     [this]
+                     {
+                         if (not m_CurrentActivatedTask)
+                             return;
+
+                         TaskMovingDialog task(*m_CurrentActivatedTask,
+                                               this);
+
+                         task.setFixedSize(600, 400);
+                         task.exec();
+                     });
+
+    QObject::connect(removeButton,
+                     &QPushButton::clicked,
+                     [this]
+                     {
+                         if (not m_CurrentActivatedTask)
+                             return;
+
+                         const QListWidgetItem& task = *m_CurrentActivatedTask;
+
+                         m_TaskRepository.deleteTask(task.text());
+                         m_CurrentActivatedTask = std::nullopt;
+                         this->initWindow();
+                     });
 
     buttonLayout->addWidget(addButton);
+    buttonLayout->addWidget(moveButton);
     buttonLayout->addWidget(removeButton);
-    
-    layout->addLayout(buttonLayout);
+
+    mainLayout.addLayout(buttonLayout);
 }
 
-void KanbanBoard::fillTaskLists()
-{
-    auto tasks = TaskRepository::get()
-                     .getAllTasks();
 
-    for (auto&& task : tasks |
-                           std::views::as_rvalue)
-    {
-        m_StatusWidgetMap[task.status]->addItem(
-            std::move(task.description));
-    }
+auto KanbanBoard::fillTaskLists() -> void
+{
+    auto tasks = m_TaskRepository.getAllTasks();
+
+    std::ranges::for_each(tasks | std::views::as_rvalue,
+                          [this] (auto&& task)
+                          {
+                              QListWidget& statusWidget = m_StatusWidgetMap.at(std::move(task.status));
+
+                              statusWidget.addItem(std::move(task.description));
+                          });
 }
 
-void KanbanBoard::taskClicked(QListWidgetItem *const task)
-{
-    m_CurrentActivatedTask = task;
-}
 
-void KanbanBoard::addButtonClicked()
+[[nodiscard]]
+auto KanbanBoard::getTaskRepository() const -> const TaskRepository&
 {
-    TaskDialog task(this);
-    task.setFixedSize(600, 400);
-    task.exec();
-}
-
-void KanbanBoard::removeButtonClicked()
-{
-    qDebug() << "remove";
+    return m_TaskRepository;
 }
