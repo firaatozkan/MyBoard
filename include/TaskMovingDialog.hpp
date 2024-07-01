@@ -15,7 +15,7 @@ public:
     TaskMovingDialog(QListWidgetItem& selectedTask,
                      QWidget* parent = nullptr);
 
-    ~TaskMovingDialog() = default;
+    ~TaskMovingDialog() noexcept = default;
 
 private:
     QComboBox* m_StatusBox;

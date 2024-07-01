@@ -28,7 +28,7 @@ public:
 public:
     explicit KanbanBoard(QWidget* parent = nullptr);
 
-    ~KanbanBoard() = default;
+    ~KanbanBoard() noexcept = default;
 
     auto initWindow() -> void;
 

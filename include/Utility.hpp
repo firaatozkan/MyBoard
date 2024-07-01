@@ -15,7 +15,7 @@ namespace Utility
 
         using difference_type = std::ptrdiff_t;
 
-        [[nodiscard]] auto operator*() -> QVBoxLayout*&
+        [[nodiscard]] constexpr auto operator*() noexcept -> QVBoxLayout*&
         {
             return childLayout;
         }
@@ -30,7 +30,7 @@ namespace Utility
             return *this;
         }
 
-        [[nodiscard]] auto operator++(int) const -> QLayoutInserter
+        [[nodiscard]] auto operator++(int) const noexcept -> QLayoutInserter
         {
             return *this;
         }
@@ -43,7 +43,7 @@ namespace Utility
 
         using difference_type = std::ptrdiff_t;
 
-        [[nodiscard]] auto operator*() -> QString&
+        [[nodiscard]] constexpr auto operator*() noexcept -> QString&
         {
             return string;
         }
@@ -54,7 +54,7 @@ namespace Utility
             return *this;
         }
 
-        [[nodiscard]] auto operator++(int) const -> QStringInserter
+        [[nodiscard]] auto operator++(int) const noexcept -> QStringInserter
         {
             return *this;
         }

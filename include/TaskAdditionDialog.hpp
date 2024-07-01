@@ -13,7 +13,7 @@ class TaskAdditionDialog
 public:
     explicit TaskAdditionDialog(QWidget* parent = nullptr);
     
-    ~TaskAdditionDialog() = default;
+    ~TaskAdditionDialog() noexcept = default;
 
 private:
     QLineEdit* m_TaskEdit;
